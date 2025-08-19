@@ -82,6 +82,68 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    // Video Details Explorer
+    const videoDetailsBtn = document.getElementById('video-details-btn');
+    const videoIdInput = document.getElementById('video-id-input');
+    const videoDetailsResults = document.getElementById('video-details-results');
+
+    videoDetailsBtn.addEventListener('click', () => {
+        const videoId = videoIdInput.value.trim();
+        if (videoId) {
+            fetch('/api/video_details', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ video_id: videoId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    displayError(videoDetailsResults, data.error);
+                } else {
+                    displayVideoDetails(videoDetailsResults, data);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                displayError(videoDetailsResults, 'An error occurred.');
+            });
+        }
+    });
+
+    function displayVideoDetails(element, details) {
+        // Helper function to format the ISO 8601 duration
+        const formatDuration = (isoDuration) => {
+            const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
+            const matches = isoDuration.match(regex);
+            const hours = parseInt(matches[1] || 0);
+            const minutes = parseInt(matches[2] || 0);
+            const seconds = parseInt(matches[3] || 0);
+            if(hours > 0) {
+                return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        };
+
+        element.innerHTML = `
+            <h4>${details.title}</h4>
+            <div class="video-stats" style="display: flex; justify-content: space-around; flex-wrap: wrap; margin-bottom: 1rem; background: #fdfdfd; padding: 0.5rem; border-radius: 5px;">
+                <p><strong>Views:</strong> ${details.viewCount}</p>
+                <p><strong>Likes:</strong> ${details.likeCount}</p>
+                <p><strong>Comments:</strong> ${details.commentCount}</p>
+                <p><strong>Duration:</strong> ${formatDuration(details.duration)}</p>
+                <p><strong>Definition:</strong> ${details.definition}</p>
+            </div>
+            <h5>Tags:</h5>
+            <div class="tags-container" style="margin-bottom: 1rem;">
+                ${details.tags.map(tag => `<span class="tag" style="background-color: #e9ecef; padding: 0.3rem 0.6rem; border-radius: 3px; margin: 0.2rem; display: inline-block;">${tag}</span>`).join('')}
+            </div>
+            <h5>Description:</h5>
+            <p class="description" style="white-space: pre-wrap; background: #fdfdfd; padding: 1rem; border-radius: 5px;">${details.description}</p>
+        `;
+    }
+
     // Keyword Research Tool
     const keywordBtn = document.getElementById('keyword-btn');
     const keywordInput = document.getElementById('keyword-input');

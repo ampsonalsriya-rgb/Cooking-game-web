@@ -196,5 +196,47 @@ def channel_analytics():
         return jsonify({'error': 'An error occurred while fetching channel analytics.'}), 500
 
 
+@app.route('/api/video_details', methods=['POST'])
+def video_details():
+    if not YOUTUBE_API_KEY:
+        return jsonify({'error': 'YouTube API key is not configured. Please set the YOUTUBE_API_KEY environment variable.'}), 500
+
+    data = request.get_json()
+    video_id = data.get('video_id')
+    if not video_id:
+        return jsonify({'error': 'Video ID is required'}), 400
+
+    try:
+        youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+        request = youtube.videos().list(
+            part="snippet,contentDetails,statistics,topicDetails",
+            id=video_id
+        )
+        response = request.execute()
+
+        if not response.get('items'):
+            return jsonify({'error': 'Video not found.'}), 404
+
+        video_data = response['items'][0]
+
+        details = {
+            'title': video_data['snippet']['title'],
+            'description': video_data['snippet']['description'],
+            'tags': video_data['snippet'].get('tags', []),
+            'categoryId': video_data['snippet']['categoryId'],
+            'viewCount': video_data['statistics'].get('viewCount', 'N/A'),
+            'likeCount': video_data['statistics'].get('likeCount', 'N/A'),
+            'commentCount': video_data['statistics'].get('commentCount', 'N/A'),
+            'duration': video_data['contentDetails']['duration'],
+            'definition': video_data['contentDetails']['definition'],
+            'topicCategories': video_data.get('topicDetails', {}).get('topicCategories', [])
+        }
+
+        return jsonify(details)
+    except Exception as e:
+        app.logger.error(f"An error occurred with the YouTube API: {e}")
+        return jsonify({'error': 'An error occurred while fetching video details.'}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
