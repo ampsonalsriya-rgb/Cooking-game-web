@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidIQ Clone</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>VidIQ Clone</h1>
+
+        <!-- Keyword Research Tool -->
+        <div class="tool-section">
+            <h2>Keyword Research</h2>
+            <input type="text" id="keyword-input" placeholder="Enter a keyword...">
+            <button id="keyword-btn">Get Related Keywords</button>
+            <div id="keyword-results" class="results"></div>
+        </div>
+
+        <!-- AI Title Generator -->
+        <div class="tool-section">
+            <h2>AI Title Generator</h2>
+            <input type="text" id="title-topic-input" placeholder="Enter a video topic...">
+            <button id="title-btn">Generate Titles</button>
+            <div id="title-results" class="results"></div>
+        </div>
+
+        <!-- Video Idea Generator -->
+        <div class="tool-section">
+            <h2>Video Idea Generator</h2>
+            <input type="text" id="idea-topic-input" placeholder="Enter a topic...">
+            <button id="idea-btn">Generate Ideas</button>
+            <div id="idea-results" class="results"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
