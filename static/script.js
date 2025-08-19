@@ -37,6 +37,51 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Channel Analytics
+    const channelAnalyticsBtn = document.getElementById('channel-analytics-btn');
+    const channelIdInput = document.getElementById('channel-id-input');
+    const channelAnalyticsResults = document.getElementById('channel-analytics-results');
+
+    channelAnalyticsBtn.addEventListener('click', () => {
+        const channelId = channelIdInput.value.trim();
+        if (channelId) {
+            fetch('/api/channel_analytics', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ channel_id: channelId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    displayError(channelAnalyticsResults, data.error);
+                } else {
+                    displayChannelAnalytics(channelAnalyticsResults, data);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                displayError(channelAnalyticsResults, 'An error occurred.');
+            });
+        }
+    });
+
+    function displayChannelAnalytics(element, analytics) {
+        element.innerHTML = `
+            <div class="channel-card" style="display: flex; align-items: center;">
+                <img src="${analytics.thumbnail}" alt="${analytics.title}" style="width: 80px; height: 80px; border-radius: 50%; margin-right: 1rem;">
+                <div class="channel-info">
+                    <h3>${analytics.title}</h3>
+                    <p><strong>Subscribers:</strong> ${analytics.subscriberCount}</p>
+                    <p><strong>Total Views:</strong> ${analytics.viewCount}</p>
+                    <p><strong>Total Videos:</strong> ${analytics.videoCount}</p>
+                </div>
+            </div>
+            <p style="margin-top: 1rem;">${analytics.description.substring(0, 300)}...</p>
+        `;
+    }
+
     // Keyword Research Tool
     const keywordBtn = document.getElementById('keyword-btn');
     const keywordInput = document.getElementById('keyword-input');

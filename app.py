@@ -158,5 +158,43 @@ def trending_videos():
         return jsonify({'error': 'An error occurred while fetching trending videos.'}), 500
 
 
+@app.route('/api/channel_analytics', methods=['POST'])
+def channel_analytics():
+    if not YOUTUBE_API_KEY:
+        return jsonify({'error': 'YouTube API key is not configured. Please set the YOUTUBE_API_KEY environment variable.'}), 500
+
+    data = request.get_json()
+    channel_id = data.get('channel_id')
+    if not channel_id:
+        return jsonify({'error': 'Channel ID is required'}), 400
+
+    try:
+        youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+        request = youtube.channels().list(
+            part="snippet,contentDetails,statistics",
+            id=channel_id
+        )
+        response = request.execute()
+
+        if not response.get('items'):
+            return jsonify({'error': 'Channel not found.'}), 404
+
+        channel_data = response['items'][0]
+
+        analytics = {
+            'title': channel_data['snippet']['title'],
+            'description': channel_data['snippet']['description'],
+            'thumbnail': channel_data['snippet']['thumbnails']['medium']['url'],
+            'subscriberCount': channel_data['statistics'].get('subscriberCount', 'N/A'),
+            'viewCount': channel_data['statistics'].get('viewCount', 'N/A'),
+            'videoCount': channel_data['statistics'].get('videoCount', 'N/A'),
+        }
+
+        return jsonify(analytics)
+    except Exception as e:
+        app.logger.error(f"An error occurred with the YouTube API: {e}")
+        return jsonify({'error': 'An error occurred while fetching channel analytics.'}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
