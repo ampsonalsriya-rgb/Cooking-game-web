@@ -5,9 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "vidiq-clone-mvp" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "vidiq-clone-mvp" ]
 
 permissions:
   contents: read
