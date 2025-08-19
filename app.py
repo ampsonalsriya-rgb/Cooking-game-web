@@ -125,5 +125,38 @@ def hashtag_generator():
         return jsonify({'error': 'An error occurred with the Gemini API. Please check your key.'}), 500
 
 
+@app.route('/api/trending_videos', methods=['GET'])
+def trending_videos():
+    if not YOUTUBE_API_KEY:
+        return jsonify({'error': 'YouTube API key is not configured. Please set the YOUTUBE_API_KEY environment variable.'}), 500
+
+    try:
+        youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+        request = youtube.videos().list(
+            part="snippet,contentDetails,statistics",
+            chart="mostPopular",
+            regionCode="US",  # Defaulting to US, can be parameterized later
+            maxResults=12
+        )
+        response = request.execute()
+
+        trending_videos = []
+        for item in response.get('items', []):
+            video_data = {
+                'title': item['snippet']['title'],
+                'channelTitle': item['snippet']['channelTitle'],
+                'thumbnail': item['snippet']['thumbnails']['medium']['url'],
+                'viewCount': item['statistics'].get('viewCount', 'N/A'),
+                'likeCount': item['statistics'].get('likeCount', 'N/A'),
+                'videoId': item['id']
+            }
+            trending_videos.append(video_data)
+
+        return jsonify(trending_videos)
+    except Exception as e:
+        app.logger.error(f"An error occurred with the YouTube API: {e}")
+        return jsonify({'error': 'An error occurred while fetching trending videos.'}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)

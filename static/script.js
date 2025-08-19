@@ -1,4 +1,42 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Trending Videos
+    const trendingBtn = document.getElementById('trending-btn');
+    const trendingResults = document.getElementById('trending-results');
+
+    trendingBtn.addEventListener('click', () => {
+        fetch('/api/trending_videos')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                displayError(trendingResults, data.error);
+            } else {
+                displayTrendingVideos(trendingResults, data);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            displayError(trendingResults, 'An error occurred.');
+        });
+    });
+
+    function displayTrendingVideos(element, videos) {
+        element.innerHTML = ''; // Clear previous results
+        videos.forEach(video => {
+            const videoCard = document.createElement('div');
+            videoCard.className = 'video-card';
+            videoCard.innerHTML = `
+                <a href="https://www.youtube.com/watch?v=${video.videoId}" target="_blank" style="text-decoration: none; color: inherit;">
+                    <img src="${video.thumbnail}" alt="${video.title}">
+                    <h3>${video.title}</h3>
+                </a>
+                <p><strong>Channel:</strong> ${video.channelTitle}</p>
+                <p><strong>Views:</strong> ${video.viewCount}</p>
+                <p><strong>Likes:</strong> ${video.likeCount}</p>
+            `;
+            element.appendChild(videoCard);
+        });
+    }
+
     // Keyword Research Tool
     const keywordBtn = document.getElementById('keyword-btn');
     const keywordInput = document.getElementById('keyword-input');
