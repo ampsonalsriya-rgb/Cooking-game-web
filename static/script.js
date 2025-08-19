@@ -77,6 +77,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Hashtag Generator
+    const hashtagBtn = document.getElementById('hashtag-btn');
+    const hashtagInput = document.getElementById('hashtag-input');
+    const hashtagResults = document.getElementById('hashtag-results');
+
+    hashtagBtn.addEventListener('click', () => {
+        const text = hashtagInput.value.trim();
+        if (text) {
+            fetch('/api/hashtag_generator', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    displayError(hashtagResults, data.error);
+                } else {
+                    hashtagResults.innerHTML = `<p>${data.hashtags}</p>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                displayError(hashtagResults, 'An error occurred.');
+            });
+        }
+    });
+
     function displayResults(element, data) {
         if (data.error) {
             displayError(element, data.error);

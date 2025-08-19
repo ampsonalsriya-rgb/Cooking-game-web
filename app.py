@@ -103,5 +103,27 @@ def idea_generator():
         app.logger.error(f"An error occurred with the Gemini API: {e}")
         return jsonify({'error': 'An error occurred with the Gemini API. Please check your key.'}), 500
 
+
+@app.route('/api/hashtag_generator', methods=['POST'])
+def hashtag_generator():
+    if not GEMINI_API_KEY:
+        return jsonify({'error': 'Gemini API key is not configured. Please set the GEMINI_API_KEY environment variable.'}), 500
+
+    data = request.get_json()
+    text = data.get('text')
+    if not text:
+        return jsonify({'error': 'Text is required'}), 400
+
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt = f"Generate a list of 10-15 relevant and trending YouTube hashtags for a video with the following title/description:\n\n{text}\n\nReturn the hashtags as a single line of space-separated text, each starting with a '#' symbol."
+        response = model.generate_content(prompt)
+        hashtags = response.text.strip()
+        return jsonify({'hashtags': hashtags})
+    except Exception as e:
+        app.logger.error(f"An error occurred with the Gemini API: {e}")
+        return jsonify({'error': 'An error occurred with the Gemini API. Please check your key.'}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
