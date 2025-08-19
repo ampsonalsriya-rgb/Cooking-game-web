@@ -74,7 +74,7 @@ def title_generator():
 
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
-        prompt = f"Generate 5 catchy YouTube titles for a video about {topic}."
+        prompt = f"You are a YouTube expert specializing in viral titles. Based on the following topic or draft title, generate 5 improved, catchy, and SEO-optimized alternative video titles. Here is the input: '{topic}'"
         response = model.generate_content(prompt)
         titles = response.text.strip().split('\n')
         return jsonify(titles)
