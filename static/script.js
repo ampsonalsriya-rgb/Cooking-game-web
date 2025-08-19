@@ -252,6 +252,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // AI Description & Tag Recommendations
+    const descTagsBtn = document.getElementById('desc-tags-btn');
+    const descTagsTopicInput = document.getElementById('desc-tags-topic-input');
+    const descTagsResults = document.getElementById('desc-tags-results');
+
+    descTagsBtn.addEventListener('click', () => {
+        const topic = descTagsTopicInput.value.trim();
+        if (topic) {
+            fetch('/api/ai_description_tags', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ topic: topic })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    displayError(descTagsResults, data.error);
+                } else {
+                    displayDescriptionAndTags(descTagsResults, data);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                displayError(descTagsResults, 'An error occurred.');
+            });
+        }
+    });
+
+    function displayDescriptionAndTags(element, data) {
+        element.innerHTML = `
+            <h5>Generated Description:</h5>
+            <p class="description" style="white-space: pre-wrap; background: #fdfdfd; padding: 1rem; border-radius: 5px;">${data.description}</p>
+            <h5 style="margin-top: 1rem;">Generated Tags:</h5>
+            <div class="tags-container">
+                ${data.tags.map(tag => `<span class="tag" style="background-color: #e9ecef; padding: 0.3rem 0.6rem; border-radius: 3px; margin: 0.2rem; display: inline-block;">${tag}</span>`).join('')}
+            </div>
+        `;
+    }
+
     function displayResults(element, data) {
         if (data.error) {
             displayError(element, data.error);

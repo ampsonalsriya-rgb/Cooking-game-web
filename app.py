@@ -238,5 +238,46 @@ def video_details():
         return jsonify({'error': 'An error occurred while fetching video details.'}), 500
 
 
+@app.route('/api/ai_description_tags', methods=['POST'])
+def ai_description_tags():
+    if not GEMINI_API_KEY:
+        return jsonify({'error': 'Gemini API key is not configured. Please set the GEMINI_API_KEY environment variable.'}), 500
+
+    data = request.get_json()
+    topic = data.get('topic')
+    if not topic:
+        return jsonify({'error': 'Topic is required'}), 400
+
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt = f"""
+        Generate a YouTube video description and a list of relevant tags for a video about: "{topic}".
+
+        Please return the output in a JSON format with two keys: "description" and "tags".
+        The "description" should be a well-written, engaging paragraph of about 100-150 words.
+        The "tags" should be a list of 10-15 relevant keywords.
+
+        Example:
+        {{
+          "description": "In this video, we explore the best techniques for landscape photography...",
+          "tags": ["landscape photography", "photography tips", "nature photography", "camera settings", "long exposure"]
+        }}
+        """
+        response = model.generate_content(prompt)
+
+        import json
+        # Clean the response to ensure it's valid JSON
+        text_response = response.text
+        start = text_response.find('{')
+        end = text_response.rfind('}') + 1
+        json_str = text_response[start:end]
+        json_response = json.loads(json_str)
+
+        return jsonify(json_response)
+    except Exception as e:
+        app.logger.error(f"An error occurred with the Gemini API: {e}")
+        return jsonify({'error': 'An error occurred while generating description and tags.'}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
