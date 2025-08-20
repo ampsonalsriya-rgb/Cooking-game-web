@@ -354,6 +354,84 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    // Bulk SEO Editor
+    const fetchVideosBtn = document.getElementById('fetch-videos-btn');
+    if (fetchVideosBtn) {
+        const bulkEditorResults = document.getElementById('bulk-editor-results');
+        const saveBulkEditBtn = document.getElementById('save-bulk-edit-btn');
+
+        fetchVideosBtn.addEventListener('click', () => {
+            fetchVideosBtn.textContent = 'Loading...';
+            fetchVideosBtn.disabled = true;
+            fetch('/api/my_videos')
+                .then(response => response.json())
+                .then(data => {
+                    fetchVideosBtn.textContent = 'Fetch My Videos';
+                    fetchVideosBtn.disabled = false;
+                    if (data.error) {
+                        displayError(bulkEditorResults, data.error);
+                    } else {
+                        renderBulkEditor(bulkEditorResults, data);
+                        saveBulkEditBtn.style.display = 'block';
+                    }
+                });
+        });
+
+        const renderBulkEditor = (element, videos) => {
+            element.innerHTML = '';
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.setAttribute('border', '1');
+            table.setAttribute('cellpadding', '5');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Title</th>
+                        <th style="width: 70%;">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            `;
+            const tbody = table.querySelector('tbody');
+            videos.forEach((video) => {
+                const row = document.createElement('tr');
+                row.dataset.videoId = video.videoId;
+                row.innerHTML = `
+                    <td><input type="text" value="${video.title}" class="bulk-edit-title" style="width: 100%; box-sizing: border-box;"></td>
+                    <td><textarea rows="4" class="bulk-edit-desc" style="width: 100%; box-sizing: border-box; resize: vertical;">${video.description}</textarea></td>
+                `;
+                tbody.appendChild(row);
+            });
+            element.appendChild(table);
+        };
+
+        saveBulkEditBtn.addEventListener('click', () => {
+            const updatedVideos = [];
+            document.querySelectorAll('#bulk-editor-results tbody tr').forEach(row => {
+                const videoId = row.dataset.videoId;
+                const title = row.querySelector('.bulk-edit-title').value;
+                const description = row.querySelector('.bulk-edit-desc').value;
+                updatedVideos.push({ videoId, title, description });
+            });
+
+            saveBulkEditBtn.textContent = 'Saving...';
+            saveBulkEditBtn.disabled = true;
+
+            fetch('/api/bulk_edit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ videos: updatedVideos })
+            })
+            .then(response => response.json())
+            .then(data => {
+                saveBulkEditBtn.textContent = 'Save All Changes';
+                saveBulkEditBtn.disabled = false;
+                alert(data.message || data.error);
+            });
+        });
+    }
+
     // Subscriber Analysis
     const subscriberAnalysisBtn = document.getElementById('subscriber-analysis-btn');
     if (subscriberAnalysisBtn) {

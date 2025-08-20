@@ -48,7 +48,7 @@ google = oauth.register(
     authorize_params=None,
     api_base_url='https://www.googleapis.com/oauth2/v1/',
     userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',  # This is the endpoint to get user info
-    client_kwargs={'scope': 'openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.analytics.readonly'},
+    client_kwargs={'scope': 'openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.analytics.readonly https://www.googleapis.com/auth/youtube.force-ssl'},
 )
 
 # --- API Key Configuration ---
@@ -608,6 +608,121 @@ def subscriber_analysis():
     except Exception as e:
         app.logger.error(f"An error occurred with the YouTube Analytics API: {e}")
         return jsonify({'error': 'An error occurred while fetching subscriber analysis.'}), 500
+
+
+@app.route('/api/my_videos', methods=['GET'])
+def get_my_videos():
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        from google.oauth2.credentials import Credentials
+
+        token = oauth.google.token
+        if not token:
+            return jsonify({'error': 'Authentication token not found.'}), 401
+
+        credentials = Credentials(
+            token=token.get('access_token'),
+            refresh_token=token.get('refresh_token'),
+            token_uri=google.access_token_url,
+            client_id=google.client_id,
+            client_secret=google.client_secret,
+            scopes=google.client_kwargs['scope']
+        )
+
+        youtube = build('youtube', 'v3', credentials=credentials)
+
+        videos = []
+        next_page_token = None
+        while True:
+            request = youtube.search().list(
+                part="snippet",
+                forMine=True,
+                type="video",
+                maxResults=50,
+                pageToken=next_page_token
+            )
+            response = request.execute()
+
+            for item in response.get('items', []):
+                videos.append({
+                    'videoId': item['id']['videoId'],
+                    'title': item['snippet']['title'],
+                    'description': item['snippet']['description']
+                })
+
+            next_page_token = response.get('nextPageToken')
+            if not next_page_token or len(videos) >= 200: # Limit to 200 videos for performance
+                break
+
+        return jsonify(videos)
+    except Exception as e:
+        app.logger.error(f"An error occurred while fetching user's videos: {e}")
+        return jsonify({'error': "An error occurred while fetching your videos."}), 500
+
+@app.route('/api/bulk_edit', methods=['POST'])
+def bulk_edit():
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    videos_to_update = data.get('videos')
+    if not videos_to_update:
+        return jsonify({'error': 'No videos to update provided.'}), 400
+
+    try:
+        from google.oauth2.credentials import Credentials
+
+        token = oauth.google.token
+        if not token:
+            return jsonify({'error': 'Authentication token not found.'}), 401
+
+        credentials = Credentials(
+            token=token.get('access_token'),
+            refresh_token=token.get('refresh_token'),
+            token_uri=google.access_token_url,
+            client_id=google.client_id,
+            client_secret=google.client_secret,
+            scopes=google.client_kwargs['scope']
+        )
+
+        youtube = build('youtube', 'v3', credentials=credentials)
+
+        updated_count = 0
+        for video in videos_to_update:
+            video_id = video.get('videoId')
+            new_title = video.get('title')
+            new_description = video.get('description')
+
+            if not video_id or not new_title or new_description is None:
+                continue
+
+            video_response = youtube.videos().list(
+                part='snippet',
+                id=video_id
+            ).execute()
+
+            if not video_response.get('items'):
+                continue
+
+            snippet = video_response['items'][0]['snippet']
+            snippet['title'] = new_title
+            snippet['description'] = new_description
+
+            youtube.videos().update(
+                part='snippet',
+                body={
+                    'id': video_id,
+                    'snippet': snippet
+                }
+            ).execute()
+            updated_count += 1
+
+        return jsonify({'message': f'{updated_count} videos updated successfully.'})
+    except Exception as e:
+        app.logger.error(f"An error occurred during bulk edit: {e}")
+        return jsonify({'error': 'An error occurred during the bulk edit process.'}), 500
 
 
 # --- Command to create the database ---
