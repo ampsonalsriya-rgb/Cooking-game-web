@@ -60,3 +60,20 @@ The application will be running and accessible at `http://localhost:8080`.
 └── templates/
     └── index.html      # Main HTML template
 ```
+
+## Deployment
+
+This application is ready to be deployed to most modern hosting platforms that support Python, such as Heroku or Render.
+
+### General Deployment Steps:
+
+1.  **Create a new app** on your chosen hosting platform.
+2.  **Connect your GitHub repository** to the hosting platform.
+3.  **Configure Environment Variables**: On your hosting platform's dashboard, you will need to set the following environment variables. Do not put your secret keys directly in the code.
+    *   `GOOGLE_CLIENT_ID`
+    *   `GOOGLE_CLIENT_SECRET`
+    *   `YOUTUBE_API_KEY`
+    *   `GEMINI_API_KEY`
+4.  **Trigger a deployment**: The hosting service should automatically detect the `Procfile` and install the dependencies from `requirements.txt`. It will then start the application using the `gunicorn` server.
+
+The application should then be live at the URL provided by your hosting service.
