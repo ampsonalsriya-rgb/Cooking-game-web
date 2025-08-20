@@ -1,9 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const loader = document.getElementById('loader');
+    const showLoader = () => loader.style.display = 'block';
+    const hideLoader = () => loader.style.display = 'none';
+
     // Trending Videos
     const trendingBtn = document.getElementById('trending-btn');
     const trendingResults = document.getElementById('trending-results');
 
     trendingBtn.addEventListener('click', () => {
+        showLoader();
+        trendingResults.innerHTML = '';
         fetch('/api/trending_videos')
         .then(response => response.json())
         .then(data => {
@@ -16,7 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(error => {
             console.error('Error:', error);
             displayError(trendingResults, 'An error occurred.');
-        });
+        })
+        .finally(() => hideLoader());
     });
 
     function displayTrendingVideos(element, videos) {
@@ -45,11 +52,11 @@ document.addEventListener('DOMContentLoaded', () => {
     channelAnalyticsBtn.addEventListener('click', () => {
         const channelId = channelIdInput.value.trim();
         if (channelId) {
+            showLoader();
+            channelAnalyticsResults.innerHTML = '';
             fetch('/api/channel_analytics', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ channel_id: channelId })
             })
             .then(response => response.json())
@@ -63,7 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Error:', error);
                 displayError(channelAnalyticsResults, 'An error occurred.');
-            });
+            })
+            .finally(() => hideLoader());
         }
     });
 
@@ -90,11 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
     channelAuditBtn.addEventListener('click', () => {
         const channelId = auditChannelIdInput.value.trim();
         if (channelId) {
+            showLoader();
+            channelAuditResults.innerHTML = '';
             fetch('/api/channel_audit', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ channel_id: channelId })
             })
             .then(response => response.json())
@@ -108,7 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Error:', error);
                 displayError(channelAuditResults, 'An error occurred.');
-            });
+            })
+            .finally(() => hideLoader());
         }
     });
 
@@ -151,11 +160,11 @@ document.addEventListener('DOMContentLoaded', () => {
     videoDetailsBtn.addEventListener('click', () => {
         const videoId = videoIdInput.value.trim();
         if (videoId) {
+            showLoader();
+            videoDetailsResults.innerHTML = '';
             fetch('/api/video_details', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ video_id: videoId })
             })
             .then(response => response.json())
@@ -169,12 +178,12 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Error:', error);
                 displayError(videoDetailsResults, 'An error occurred.');
-            });
+            })
+            .finally(() => hideLoader());
         }
     });
 
     function displayVideoDetails(element, details) {
-        // Helper function to format the ISO 8601 duration
         const formatDuration = (isoDuration) => {
             const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
             const matches = isoDuration.match(regex);
@@ -213,11 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
     keywordBtn.addEventListener('click', () => {
         const keyword = keywordInput.value.trim();
         if (keyword) {
+            showLoader();
+            keywordResults.innerHTML = '';
             fetch('/api/keyword_research', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ keyword: keyword })
             })
             .then(response => response.json())
@@ -227,7 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Error:', error);
                 displayError(keywordResults, 'An error occurred.');
-            });
+            })
+            .finally(() => hideLoader());
         }
     });
 
@@ -239,11 +249,11 @@ document.addEventListener('DOMContentLoaded', () => {
     titleBtn.addEventListener('click', () => {
         const topic = titleTopicInput.value.trim();
         if (topic) {
+            showLoader();
+            titleResults.innerHTML = '';
             fetch('/api/title_generator', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ topic: topic })
             })
             .then(response => response.json())
@@ -253,7 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Error:', error);
                 displayError(titleResults, 'An error occurred.');
-            });
+            })
+            .finally(() => hideLoader());
         }
     });
 
@@ -265,11 +276,11 @@ document.addEventListener('DOMContentLoaded', () => {
     ideaBtn.addEventListener('click', () => {
         const topic = ideaTopicInput.value.trim();
         if (topic) {
+            showLoader();
+            ideaResults.innerHTML = '';
             fetch('/api/idea_generator', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ topic: topic })
             })
             .then(response => response.json())
@@ -279,7 +290,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Error:', error);
                 displayError(ideaResults, 'An error occurred.');
-            });
+            })
+            .finally(() => hideLoader());
         }
     });
 
@@ -291,11 +303,11 @@ document.addEventListener('DOMContentLoaded', () => {
     hashtagBtn.addEventListener('click', () => {
         const text = hashtagInput.value.trim();
         if (text) {
+            showLoader();
+            hashtagResults.innerHTML = '';
             fetch('/api/hashtag_generator', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: text })
             })
             .then(response => response.json())
@@ -309,7 +321,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Error:', error);
                 displayError(hashtagResults, 'An error occurred.');
-            });
+            })
+            .finally(() => hideLoader());
         }
     });
 
@@ -321,11 +334,11 @@ document.addEventListener('DOMContentLoaded', () => {
     descTagsBtn.addEventListener('click', () => {
         const topic = descTagsTopicInput.value.trim();
         if (topic) {
+            showLoader();
+            descTagsResults.innerHTML = '';
             fetch('/api/ai_description_tags', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ topic: topic })
             })
             .then(response => response.json())
@@ -339,7 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Error:', error);
                 displayError(descTagsResults, 'An error occurred.');
-            });
+            })
+            .finally(() => hideLoader());
         }
     });
 
@@ -361,6 +375,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const saveBulkEditBtn = document.getElementById('save-bulk-edit-btn');
 
         fetchVideosBtn.addEventListener('click', () => {
+            showLoader();
+            bulkEditorResults.innerHTML = '';
             fetchVideosBtn.textContent = 'Loading...';
             fetchVideosBtn.disabled = true;
             fetch('/api/my_videos')
@@ -374,7 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         renderBulkEditor(bulkEditorResults, data);
                         saveBulkEditBtn.style.display = 'block';
                     }
-                });
+                })
+                .finally(() => hideLoader());
         });
 
         const renderBulkEditor = (element, videos) => {
@@ -415,6 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updatedVideos.push({ videoId, title, description });
             });
 
+            showLoader();
             saveBulkEditBtn.textContent = 'Saving...';
             saveBulkEditBtn.disabled = true;
 
@@ -428,7 +446,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveBulkEditBtn.textContent = 'Save All Changes';
                 saveBulkEditBtn.disabled = false;
                 alert(data.message || data.error);
-            });
+            })
+            .finally(() => hideLoader());
         });
     }
 
@@ -438,6 +457,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const subscriberAnalysisResults = document.getElementById('subscriber-analysis-results');
 
         subscriberAnalysisBtn.addEventListener('click', () => {
+            showLoader();
+            subscriberAnalysisResults.innerHTML = '';
             fetch('/api/subscriber_analysis')
                 .then(response => response.json())
                 .then(data => {
@@ -446,7 +467,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         displaySubscriberAnalysis(subscriberAnalysisResults, data);
                     }
-                });
+                })
+                .finally(() => hideLoader());
         });
 
         const displaySubscriberAnalysis = (element, analysis) => {
@@ -483,6 +505,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const commentTemplateList = document.getElementById('comment-template-list');
 
         const fetchTemplates = () => {
+            showLoader();
+            commentTemplateList.innerHTML = '';
             fetch('/api/comment_templates')
                 .then(response => response.json())
                 .then(data => {
@@ -491,7 +515,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         displayTemplates(commentTemplateList, data);
                     }
-                });
+                })
+                .finally(() => hideLoader());
         };
 
         const displayTemplates = (element, templates) => {
@@ -527,6 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const title = templateTitleInput.value.trim();
             const text = templateTextInput.value.trim();
             if (title && text) {
+                showLoader();
                 fetch('/api/comment_templates', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -535,15 +561,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     templateTitleInput.value = '';
                     templateTextInput.value = '';
                     fetchTemplates();
-                });
+                })
+                .finally(() => hideLoader());
             }
         });
 
         commentTemplateList.addEventListener('click', (e) => {
             if (e.target.classList.contains('delete-template-btn')) {
                 const templateId = e.target.dataset.id;
+                showLoader();
                 fetch(`/api/comment_templates/${templateId}`, { method: 'DELETE' })
-                    .then(() => fetchTemplates());
+                    .then(() => fetchTemplates())
+                    .finally(() => hideLoader());
             }
             if (e.target.classList.contains('copy-template-btn')) {
                 const textToCopy = e.target.dataset.text;
@@ -565,6 +594,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const competitorList = document.getElementById('competitor-list');
 
         const fetchCompetitors = () => {
+            showLoader();
+            competitorList.innerHTML = '';
             fetch('/api/competitors')
                 .then(response => response.json())
                 .then(data => {
@@ -573,7 +604,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         displayCompetitors(competitorList, data);
                     }
-                });
+                })
+                .finally(() => hideLoader());
         };
 
         const displayCompetitors = (element, competitors) => {
@@ -600,6 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addCompetitorBtn.addEventListener('click', () => {
             const channelId = competitorChannelIdInput.value.trim();
             if (channelId) {
+                showLoader();
                 fetch('/api/competitors', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -607,15 +640,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }).then(() => {
                     competitorChannelIdInput.value = '';
                     fetchCompetitors();
-                });
+                })
+                .finally(() => hideLoader());
             }
         });
 
         competitorList.addEventListener('click', (e) => {
             if (e.target.classList.contains('delete-competitor-btn')) {
                 const competitorId = e.target.dataset.id;
+                showLoader();
                 fetch(`/api/competitors/${competitorId}`, { method: 'DELETE' })
-                    .then(() => fetchCompetitors());
+                    .then(() => fetchCompetitors())
+                    .finally(() => hideLoader());
             }
         });
 
