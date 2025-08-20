@@ -1,3 +1,5 @@
 Flask
 google-api-python-client
 google-generativeai
+Flask-SQLAlchemy
+Authlib

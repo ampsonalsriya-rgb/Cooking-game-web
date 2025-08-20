@@ -1,13 +1,42 @@
 import os
 import logging
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, url_for, redirect
 from googleapiclient.discovery import build
 import google.generativeai as genai
+from flask_sqlalchemy import SQLAlchemy
+from authlib.integrations.flask_client import OAuth
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
+
+# --- Database Configuration ---
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///vidiq.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# --- Database Models ---
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    google_id = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+
+# --- OAuth Configuration ---
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=os.environ.get('GOOGLE_CLIENT_ID'),
+    client_secret=os.environ.get('GOOGLE_CLIENT_SECRET'),
+    access_token_url='https://accounts.google.com/o/oauth2/token',
+    access_token_params=None,
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    authorize_params=None,
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',  # This is the endpoint to get user info
+    client_kwargs={'scope': 'openid email profile https://www.googleapis.com/auth/youtube.readonly'},
+)
 
 # --- API Key Configuration ---
 # NOTE TO USER: Please set the following environment variables on your machine.
@@ -33,9 +62,35 @@ if not YOUTUBE_API_KEY:
     app.logger.warning("YOUTUBE_API_KEY environment variable not set. Keyword Research feature will not work.")
 
 
+@app.route('/login')
+def login():
+    redirect_uri = url_for('auth', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/auth')
+def auth():
+    token = google.authorize_access_token()
+    user_info = google.get('userinfo').json()
+
+    user = User.query.filter_by(google_id=user_info['id']).first()
+    if not user:
+        user = User(google_id=user_info['id'], email=user_info['email'])
+        db.session.add(user)
+        db.session.commit()
+
+    session['user'] = user_info
+    return redirect('/')
+
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect('/')
+
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    user = session.get('user')
+    return render_template('index.html', user=user)
 
 @app.route('/api/keyword_research', methods=['POST'])
 def keyword_research():
@@ -354,6 +409,14 @@ def channel_audit():
     except Exception as e:
         app.logger.error(f"An error occurred with the YouTube API: {e}")
         return jsonify({'error': 'An error occurred while performing the channel audit.'}), 500
+
+
+# --- Command to create the database ---
+@app.cli.command("init-db")
+def init_db_command():
+    """Creates the database tables."""
+    db.create_all()
+    print("Initialized the database.")
 
 
 if __name__ == '__main__':

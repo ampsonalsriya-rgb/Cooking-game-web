@@ -8,7 +8,17 @@
 </head>
 <body>
     <div class="container">
-        <h1>VidIQ Clone</h1>
+        <div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+            <h1>VidIQ Clone</h1>
+            <div class="user-auth">
+                {% if user %}
+                    <span>Welcome, {{ user.email }}</span>
+                    <a href="/logout" class="btn" style="text-decoration: none; margin-left: 1rem; background-color: #dc3545;">Logout</a>
+                {% else %}
+                    <a href="/login" class="btn" style="text-decoration: none;">Login with Google</a>
+                {% endif %}
+            </div>
+        </div>
 
         <!-- Trending Videos -->
         <div class="tool-section">
