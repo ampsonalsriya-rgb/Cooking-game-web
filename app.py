@@ -48,7 +48,7 @@ google = oauth.register(
     authorize_params=None,
     api_base_url='https://www.googleapis.com/oauth2/v1/',
     userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',  # This is the endpoint to get user info
-    client_kwargs={'scope': 'openid email profile https://www.googleapis.com/auth/youtube.readonly'},
+    client_kwargs={'scope': 'openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.analytics.readonly'},
 )
 
 # --- API Key Configuration ---
@@ -538,6 +538,76 @@ def delete_comment_template(template_id):
     db.session.commit()
 
     return jsonify({'message': 'Template deleted'}), 200
+
+
+@app.route('/api/subscriber_analysis', methods=['GET'])
+def subscriber_analysis():
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        from authlib.integrations.base_client.errors import OAuthError
+        from google.oauth2.credentials import Credentials
+        from datetime import datetime, timedelta
+
+        token = oauth.google.token
+        if not token:
+            return jsonify({'error': 'Authentication token not found.'}), 401
+
+        credentials = Credentials(
+            token=token.get('access_token'),
+            refresh_token=token.get('refresh_token'),
+            token_uri=google.access_token_url,
+            client_id=google.client_id,
+            client_secret=google.client_secret,
+            scopes=google.client_kwargs['scope']
+        )
+
+        youtube_analytics = build('youtubeAnalytics', 'v2', credentials=credentials)
+
+        youtube = build('youtube', 'v3', credentials=credentials)
+        channel_response = youtube.channels().list(part='id', mine=True).execute()
+        channel_id = channel_response['items'][0]['id']
+
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+
+        analytics_response = youtube_analytics.reports().query(
+            ids=f'channel=={channel_id}',
+            startDate=start_date,
+            endDate=end_date,
+            metrics='subscribersGained,subscribersLost',
+            dimensions='video',
+            sort='-subscribersGained'
+        ).execute()
+
+        analysis = []
+        if 'rows' in analytics_response:
+            for row in analytics_response['rows']:
+                video_id = row[0]
+                subscribers_gained = row[1]
+
+                video_response = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY).videos().list(
+                    part='snippet',
+                    id=video_id
+                ).execute()
+
+                title = 'N/A'
+                if video_response.get('items'):
+                    title = video_response['items'][0]['snippet']['title']
+
+                analysis.append({
+                    'videoId': video_id,
+                    'title': title,
+                    'subscribersGained': subscribers_gained
+                })
+
+        return jsonify(analysis)
+    except OAuthError as e:
+        return jsonify({'error': f'Authentication error: {e.description}'}), 401
+    except Exception as e:
+        app.logger.error(f"An error occurred with the YouTube Analytics API: {e}")
+        return jsonify({'error': 'An error occurred while fetching subscriber analysis.'}), 500
 
 
 # --- Command to create the database ---

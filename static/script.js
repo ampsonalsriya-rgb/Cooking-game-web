@@ -354,6 +354,48 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    // Subscriber Analysis
+    const subscriberAnalysisBtn = document.getElementById('subscriber-analysis-btn');
+    if (subscriberAnalysisBtn) {
+        const subscriberAnalysisResults = document.getElementById('subscriber-analysis-results');
+
+        subscriberAnalysisBtn.addEventListener('click', () => {
+            fetch('/api/subscriber_analysis')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        displayError(subscriberAnalysisResults, data.error);
+                    } else {
+                        displaySubscriberAnalysis(subscriberAnalysisResults, data);
+                    }
+                });
+        });
+
+        const displaySubscriberAnalysis = (element, analysis) => {
+            element.innerHTML = '';
+            if (analysis.length === 0) {
+                element.innerHTML = '<p>No subscriber data found for the last 30 days.</p>';
+                return;
+            }
+            const list = document.createElement('ul');
+            list.style.listStyle = 'none';
+            list.style.padding = '0';
+            analysis.forEach(item => {
+                const listItem = document.createElement('li');
+                listItem.style.marginBottom = '0.5rem';
+                listItem.style.padding = '0.5rem';
+                listItem.style.background = '#fdfdfd';
+                listItem.style.borderRadius = '5px';
+                listItem.innerHTML = `
+                    <a href="https://www.youtube.com/watch?v=${item.videoId}" target="_blank">${item.title}</a>
+                    <span style="float: right;"><strong>+${item.subscribersGained.toLocaleString()}</strong> subscribers</span>
+                `;
+                list.appendChild(listItem);
+            });
+            element.appendChild(list);
+        };
+    }
+
     // Comment Templates
     const commentTemplateForm = document.getElementById('comment-template-form');
     if (commentTemplateForm) {
