@@ -29,6 +29,13 @@ class Competitor(db.Model):
     channel_id = db.Column(db.String(100), nullable=False)
     user = db.relationship('User', backref=db.backref('competitors', lazy=True))
 
+class CommentTemplate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    user = db.relationship('User', backref=db.backref('comment_templates', lazy=True))
+
 # --- OAuth Configuration ---
 oauth = OAuth(app)
 google = oauth.register(
@@ -472,6 +479,65 @@ def delete_competitor(competitor_id):
     db.session.commit()
 
     return jsonify({'message': 'Competitor deleted'}), 200
+
+
+@app.route('/api/comment_templates', methods=['GET'])
+def get_comment_templates():
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user = User.query.filter_by(google_id=session['user']['id']).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    templates = []
+    for template in user.comment_templates:
+        templates.append({
+            'id': template.id,
+            'title': template.title,
+            'text': template.text
+        })
+
+    return jsonify(templates)
+
+@app.route('/api/comment_templates', methods=['POST'])
+def add_comment_template():
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user = User.query.filter_by(google_id=session['user']['id']).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    data = request.get_json()
+    title = data.get('title')
+    text = data.get('text')
+    if not title or not text:
+        return jsonify({'error': 'Title and text are required'}), 400
+
+    new_template = CommentTemplate(user_id=user.id, title=title, text=text)
+    db.session.add(new_template)
+    db.session.commit()
+
+    return jsonify({'id': new_template.id, 'title': new_template.title, 'text': new_template.text}), 201
+
+@app.route('/api/comment_templates/<int:template_id>', methods=['DELETE'])
+def delete_comment_template(template_id):
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user = User.query.filter_by(google_id=session['user']['id']).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    template = CommentTemplate.query.filter_by(id=template_id, user_id=user.id).first()
+    if not template:
+        return jsonify({'error': 'Template not found'}), 404
+
+    db.session.delete(template)
+    db.session.commit()
+
+    return jsonify({'message': 'Template deleted'}), 200
 
 
 # --- Command to create the database ---

@@ -354,6 +354,89 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    // Comment Templates
+    const commentTemplateForm = document.getElementById('comment-template-form');
+    if (commentTemplateForm) {
+        const addTemplateBtn = document.getElementById('add-template-btn');
+        const templateTitleInput = document.getElementById('template-title-input');
+        const templateTextInput = document.getElementById('template-text-input');
+        const commentTemplateList = document.getElementById('comment-template-list');
+
+        const fetchTemplates = () => {
+            fetch('/api/comment_templates')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        displayError(commentTemplateList, data.error);
+                    } else {
+                        displayTemplates(commentTemplateList, data);
+                    }
+                });
+        };
+
+        const displayTemplates = (element, templates) => {
+            element.innerHTML = '';
+            if (templates.length === 0) {
+                element.innerHTML = '<p>You have not created any comment templates yet.</p>';
+                return;
+            }
+            const list = document.createElement('div');
+            templates.forEach(t => {
+                const item = document.createElement('div');
+                item.style.border = '1px solid #ddd';
+                item.style.padding = '1rem';
+                item.style.marginBottom = '1rem';
+                item.style.borderRadius = '5px';
+                item.style.background = '#fdfdfd';
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong>${t.title}</strong>
+                        <div>
+                            <button class="copy-template-btn" data-text="${t.text}" style="width: auto; display: inline-block; margin-top: 0; margin-left: 0.5rem;">Copy</button>
+                            <button class="delete-template-btn" data-id="${t.id}" style="background-color: #dc3545; width: auto; display: inline-block; margin-top: 0; margin-left: 0.5rem;">Remove</button>
+                        </div>
+                    </div>
+                    <p style="white-space: pre-wrap; margin-top: 0.5rem;">${t.text}</p>
+                `;
+                list.appendChild(item);
+            });
+            element.appendChild(list);
+        };
+
+        addTemplateBtn.addEventListener('click', () => {
+            const title = templateTitleInput.value.trim();
+            const text = templateTextInput.value.trim();
+            if (title && text) {
+                fetch('/api/comment_templates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title, text: text })
+                }).then(() => {
+                    templateTitleInput.value = '';
+                    templateTextInput.value = '';
+                    fetchTemplates();
+                });
+            }
+        });
+
+        commentTemplateList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-template-btn')) {
+                const templateId = e.target.dataset.id;
+                fetch(`/api/comment_templates/${templateId}`, { method: 'DELETE' })
+                    .then(() => fetchTemplates());
+            }
+            if (e.target.classList.contains('copy-template-btn')) {
+                const textToCopy = e.target.dataset.text;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    e.target.textContent = 'Copied!';
+                    setTimeout(() => { e.target.textContent = 'Copy'; }, 2000);
+                });
+            }
+        });
+
+        fetchTemplates(); // Fetch templates on page load
+    }
+
     // Competitor Tracking
     const competitorForm = document.getElementById('competitor-form');
     if (competitorForm) {
