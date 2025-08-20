@@ -23,6 +23,12 @@ class User(db.Model):
     google_id = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
 
+class Competitor(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    channel_id = db.Column(db.String(100), nullable=False)
+    user = db.relationship('User', backref=db.backref('competitors', lazy=True))
+
 # --- OAuth Configuration ---
 oauth = OAuth(app)
 google = oauth.register(
@@ -409,6 +415,63 @@ def channel_audit():
     except Exception as e:
         app.logger.error(f"An error occurred with the YouTube API: {e}")
         return jsonify({'error': 'An error occurred while performing the channel audit.'}), 500
+
+
+@app.route('/api/competitors', methods=['GET'])
+def get_competitors():
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user = User.query.filter_by(google_id=session['user']['id']).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    competitors = []
+    for competitor in user.competitors:
+        competitors.append({
+            'id': competitor.id,
+            'channel_id': competitor.channel_id
+        })
+
+    return jsonify(competitors)
+
+@app.route('/api/competitors', methods=['POST'])
+def add_competitor():
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user = User.query.filter_by(google_id=session['user']['id']).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    data = request.get_json()
+    channel_id = data.get('channel_id')
+    if not channel_id:
+        return jsonify({'error': 'Channel ID is required'}), 400
+
+    new_competitor = Competitor(user_id=user.id, channel_id=channel_id)
+    db.session.add(new_competitor)
+    db.session.commit()
+
+    return jsonify({'id': new_competitor.id, 'channel_id': new_competitor.channel_id}), 201
+
+@app.route('/api/competitors/<int:competitor_id>', methods=['DELETE'])
+def delete_competitor(competitor_id):
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user = User.query.filter_by(google_id=session['user']['id']).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    competitor = Competitor.query.filter_by(id=competitor_id, user_id=user.id).first()
+    if not competitor:
+        return jsonify({'error': 'Competitor not found'}), 404
+
+    db.session.delete(competitor)
+    db.session.commit()
+
+    return jsonify({'message': 'Competitor deleted'}), 200
 
 
 # --- Command to create the database ---

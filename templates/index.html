@@ -51,6 +51,18 @@
             <div id="channel-audit-results" class="results"></div>
         </div>
 
+        {% if user %}
+        <!-- Competitor Tracking -->
+        <div class="tool-section">
+            <h2>Competitor Tracking</h2>
+            <div id="competitor-form" style="margin-bottom: 1rem;">
+                <input type="text" id="competitor-channel-id-input" placeholder="Enter Competitor Channel ID..." style="width: calc(100% - 150px);">
+                <button id="add-competitor-btn" style="width: 140px; display: inline-block; margin-left: 0.5rem; margin-top: 0;">Add Competitor</button>
+            </div>
+            <div id="competitor-list" class="results"></div>
+        </div>
+        {% endif %}
+
         <!-- Keyword Research Tool -->
         <div class="tool-section">
             <h2>Keyword Research</h2>

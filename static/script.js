@@ -354,6 +354,71 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    // Competitor Tracking
+    const competitorForm = document.getElementById('competitor-form');
+    if (competitorForm) {
+        const addCompetitorBtn = document.getElementById('add-competitor-btn');
+        const competitorChannelIdInput = document.getElementById('competitor-channel-id-input');
+        const competitorList = document.getElementById('competitor-list');
+
+        const fetchCompetitors = () => {
+            fetch('/api/competitors')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        displayError(competitorList, data.error);
+                    } else {
+                        displayCompetitors(competitorList, data);
+                    }
+                });
+        };
+
+        const displayCompetitors = (element, competitors) => {
+            element.innerHTML = '';
+            if (competitors.length === 0) {
+                element.innerHTML = '<p>You have not added any competitors yet.</p>';
+                return;
+            }
+            const list = document.createElement('ul');
+            list.style.listStyle = 'none';
+            list.style.padding = '0';
+            competitors.forEach(c => {
+                const item = document.createElement('li');
+                item.style.marginBottom = '0.5rem';
+                item.style.padding = '0.5rem';
+                item.style.background = '#fdfdfd';
+                item.style.borderRadius = '5px';
+                item.innerHTML = `<span>${c.channel_id}</span> <button class="delete-competitor-btn" data-id="${c.id}" style="float: right; background-color: #dc3545; width: auto; display: inline-block; margin-top: -5px; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 3px; cursor: pointer;">Remove</button>`;
+                list.appendChild(item);
+            });
+            element.appendChild(list);
+        };
+
+        addCompetitorBtn.addEventListener('click', () => {
+            const channelId = competitorChannelIdInput.value.trim();
+            if (channelId) {
+                fetch('/api/competitors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ channel_id: channelId })
+                }).then(() => {
+                    competitorChannelIdInput.value = '';
+                    fetchCompetitors();
+                });
+            }
+        });
+
+        competitorList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-competitor-btn')) {
+                const competitorId = e.target.dataset.id;
+                fetch(`/api/competitors/${competitorId}`, { method: 'DELETE' })
+                    .then(() => fetchCompetitors());
+            }
+        });
+
+        fetchCompetitors(); // Fetch competitors on page load
+    }
+
     function displayResults(element, data) {
         if (data.error) {
             displayError(element, data.error);
