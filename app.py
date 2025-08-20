@@ -279,5 +279,82 @@ def ai_description_tags():
         return jsonify({'error': 'An error occurred while generating description and tags.'}), 500
 
 
+@app.route('/api/channel_audit', methods=['POST'])
+def channel_audit():
+    if not YOUTUBE_API_KEY:
+        return jsonify({'error': 'YouTube API key is not configured. Please set the YOUTUBE_API_KEY environment variable.'}), 500
+
+    data = request.get_json()
+    channel_id = data.get('channel_id')
+    if not channel_id:
+        return jsonify({'error': 'Channel ID is required'}), 400
+
+    try:
+        youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+
+        # 1. Get Channel Statistics
+        channel_request = youtube.channels().list(
+            part="snippet,statistics",
+            id=channel_id
+        )
+        channel_response = channel_request.execute()
+
+        if not channel_response.get('items'):
+            return jsonify({'error': 'Channel not found.'}), 404
+
+        channel_data = channel_response['items'][0]
+        stats = channel_data['statistics']
+        subscriber_count = int(stats.get('subscriberCount', 0))
+        view_count = int(stats.get('viewCount', 0))
+        video_count = int(stats.get('videoCount', 0))
+
+        # 2. Get Recent Videos
+        recent_videos_request = youtube.search().list(
+            part="snippet",
+            channelId=channel_id,
+            order="date",
+            maxResults=5,
+            type="video"
+        )
+        recent_videos_response = recent_videos_request.execute()
+        recent_videos = [
+            {'title': item['snippet']['title'], 'videoId': item['id']['videoId']}
+            for item in recent_videos_response.get('items', [])
+        ]
+
+        # 3. Get Popular Videos
+        popular_videos_request = youtube.search().list(
+            part="snippet",
+            channelId=channel_id,
+            order="viewCount",
+            maxResults=5,
+            type="video"
+        )
+        popular_videos_response = popular_videos_request.execute()
+        popular_videos = [
+            {'title': item['snippet']['title'], 'videoId': item['id']['videoId']}
+            for item in popular_videos_response.get('items', [])
+        ]
+
+        # 4. Calculate Average Views
+        average_views = view_count / video_count if video_count > 0 else 0
+
+        audit_results = {
+            'title': channel_data['snippet']['title'],
+            'thumbnail': channel_data['snippet']['thumbnails']['medium']['url'],
+            'subscriberCount': subscriber_count,
+            'viewCount': view_count,
+            'videoCount': video_count,
+            'averageViews': round(average_views),
+            'recentVideos': recent_videos,
+            'popularVideos': popular_videos
+        }
+
+        return jsonify(audit_results)
+    except Exception as e:
+        app.logger.error(f"An error occurred with the YouTube API: {e}")
+        return jsonify({'error': 'An error occurred while performing the channel audit.'}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)

@@ -82,6 +82,67 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    // Channel Audit Tool
+    const channelAuditBtn = document.getElementById('channel-audit-btn');
+    const auditChannelIdInput = document.getElementById('audit-channel-id-input');
+    const channelAuditResults = document.getElementById('channel-audit-results');
+
+    channelAuditBtn.addEventListener('click', () => {
+        const channelId = auditChannelIdInput.value.trim();
+        if (channelId) {
+            fetch('/api/channel_audit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ channel_id: channelId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    displayError(channelAuditResults, data.error);
+                } else {
+                    displayChannelAudit(channelAuditResults, data);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                displayError(channelAuditResults, 'An error occurred.');
+            });
+        }
+    });
+
+    function displayChannelAudit(element, audit) {
+        element.innerHTML = `
+            <div class="channel-card" style="display: flex; align-items: center; margin-bottom: 1rem;">
+                <img src="${audit.thumbnail}" alt="${audit.title}" style="width: 80px; height: 80px; border-radius: 50%; margin-right: 1rem;">
+                <div class="channel-info">
+                    <h3>${audit.title}</h3>
+                </div>
+            </div>
+            <div class="video-stats" style="display: flex; justify-content: space-around; flex-wrap: wrap; margin-bottom: 1rem; background: #fdfdfd; padding: 0.5rem; border-radius: 5px;">
+                <p><strong>Subscribers:</strong> ${audit.subscriberCount.toLocaleString()}</p>
+                <p><strong>Total Views:</strong> ${audit.viewCount.toLocaleString()}</p>
+                <p><strong>Total Videos:</strong> ${audit.videoCount.toLocaleString()}</p>
+                <p><strong>Average Views:</strong> ${audit.averageViews.toLocaleString()}</p>
+            </div>
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                <div style="width: 48%; min-width: 250px;">
+                    <h5>Recent Videos:</h5>
+                    <ul>
+                        ${audit.recentVideos.map(video => `<li><a href="https://www.youtube.com/watch?v=${video.videoId}" target="_blank">${video.title}</a></li>`).join('')}
+                    </ul>
+                </div>
+                <div style="width: 48%; min-width: 250px;">
+                    <h5>Most Popular Videos:</h5>
+                    <ul>
+                        ${audit.popularVideos.map(video => `<li><a href="https://www.youtube.com/watch?v=${video.videoId}" target="_blank">${video.title}</a></li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+
     // Video Details Explorer
     const videoDetailsBtn = document.getElementById('video-details-btn');
     const videoIdInput = document.getElementById('video-id-input');
